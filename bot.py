@@ -1,6 +1,7 @@
 from PIL import Image
 from telebot import types
 from telebot.types import Message
+from flask import Flask, request
 
 import cv2
 import logging
@@ -12,11 +13,12 @@ import telebot
 
 logging.basicConfig(filename="errors.log", level=logging.INFO)
 
-TOKEN = os.getenv("TOKEN")
+TOKEN = '<TOKEN>'
 STICKER_ID = 'CAADAgADBAADgqoRDwABPpw4HAMU2QI'
 
 
 bot = telebot.TeleBot(TOKEN)
+server = Flask(__name__)
 USERS = set()
 
 
@@ -213,4 +215,18 @@ def photo_handler(message: Message):
     bot.send_message(message.chat.id, "Send more nudes")
 
 
-bot.polling(none_stop=True)
+@server.route('/' + TOKEN, methods=['POST'])
+def getMessage():
+    bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
+    return "!", 200
+
+
+@server.route("/")
+def webhook():
+    bot.remove_webhook()
+    bot.set_webhook(url='https://your_heroku_project.com/' + TOKEN)
+    return "!", 200
+
+
+if __name__ == "__main__":
+    server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
