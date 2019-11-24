@@ -12,7 +12,7 @@ import telebot
 
 logging.basicConfig(filename="errors.log", level=logging.INFO)
 
-TOKEN = '1063843208:AAHpW2vgrWfopUP-a25w-SNqCSmiquDdw2Q'
+TOKEN = os.getenv("TOKEN")
 STICKER_ID = 'CAADAgADBAADgqoRDwABPpw4HAMU2QI'
 
 
