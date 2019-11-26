@@ -1,7 +1,7 @@
+from flask import Flask, request
 from PIL import Image
 from telebot import types
 from telebot.types import Message
-from flask import Flask, request
 
 import cv2
 import logging
@@ -13,7 +13,8 @@ import telebot
 
 logging.basicConfig(filename="errors.log", level=logging.INFO)
 
-TOKEN = '<TOKEN>'
+
+TOKEN = os.getenv("TOKEN")
 STICKER_ID = 'CAADAgADBAADgqoRDwABPpw4HAMU2QI'
 
 
@@ -21,14 +22,14 @@ bot = telebot.TeleBot(TOKEN)
 server = Flask(__name__)
 USERS = set()
 
-
+# Get rid of salt & pepper noise.
 def filterOutSaltPepperNoise(edgeImg):
-    # Get rid of salt & pepper noise.
     count = 0
     lastMedian = edgeImg
     median = cv2.medianBlur(edgeImg, 3)
+
+    # get those pixels that gets zeroed out
     while not np.array_equal(lastMedian, median):
-        # get those pixels that gets zeroed out
         zeroed = np.invert(np.logical_and(median, edgeImg))
         edgeImg[zeroed] = 0
 
@@ -68,9 +69,6 @@ def findSignificantContour(edgeImg):
 def remove_background():
     basewidth = 512
     img = Image.open('images/image.png')
-    #wpercent = (basewidth / float(img.size[0]))
-    #hsize = int((float(img.size[1]) * float(wpercent)))
-    #img = img.resize((basewidth, hsize), Image.ANTIALIAS)
     img = img.resize((basewidth, basewidth), Image.ANTIALIAS)
     img.save('images/image.png')
 
@@ -163,8 +161,6 @@ def remove_background():
 
 
 # reaction to commands
-
-
 @bot.message_handler(commands=['start', 'help'])
 def command_handler(message: Message):
     if 'start' in message.text:
@@ -174,27 +170,23 @@ def command_handler(message: Message):
     if 'help' in message.text:
         bot.reply_to(message, 'Help command')
         logging.info("Command @help@ triggered")
-    bot.send_message(message.chat.id, "Send me some of your shitty pics :) I'm gonna make them better!")
+    bot.send_message(message.chat.id, "Send me some of your pics :) I'm gonna make them better!")
 
 
 # reaction to text
-
-
 @bot.edited_message_handler(content_types=['text'])
 @bot.message_handler(content_types=['text'])
 def echo_text(message: Message):
     if message.from_user.id in USERS:
-        bot.send_message(message.chat.id, "Only photos dumbass")
+        bot.send_message(message.chat.id, "Only photos")
     else:
         reply = f" Hello there, {message.from_user.first_name}"
-        reply += '\nSend me some of your shitty pics :) I''m gonna make them better!\n'
+        reply += '\nSend me some of your pics :) I''m gonna make them better!\n'
         bot.send_message(message.chat.id, reply)
     USERS.add(message.from_user.id)
 
 
 # reaction to photo
-
-
 @bot.message_handler(content_types=['photo'])
 def photo_handler(message: Message):
 
@@ -212,21 +204,24 @@ def photo_handler(message: Message):
     bot.send_message(message.chat.id, "Did some magic here")
     remove_background()
     bot.send_document(message.chat.id, open('images/image.png', 'rb'))
-    bot.send_message(message.chat.id, "Send more nudes")
+    bot.send_message(message.chat.id, "Send more pics")
 
 
+# Process webhook calls
 @server.route('/' + TOKEN, methods=['POST'])
 def getMessage():
     bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
     return "!", 200
 
 
+# Set webhook
 @server.route("/")
 def webhook():
     bot.remove_webhook()
-    bot.set_webhook(url='https://stiker-maker-telegram-bot.herokuapp.com/' + TOKEN)
+    bot.set_webhook(url=f'https://intense-stream-21350.herokuapp.com/{TOKEN}')
     return "!", 200
 
 
+# start flask server
 if __name__ == "__main__":
     server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
