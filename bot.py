@@ -66,29 +66,31 @@ def findSignificantContour(edgeImg):
     return largestContour        
 
 
-def remove_background():
+def remove_background(path):
     basewidth = 512
-    img = Image.open('images/image.png')
+    img = Image.open(path)
+    # wpercent = (basewidth / float(img.size[0]))
+    # hsize = int((float(img.size[1]) * float(wpercent)))
+    # img = img.resize((basewidth, hsize), Image.ANTIALIAS)
     img = img.resize((basewidth, basewidth), Image.ANTIALIAS)
-    img.save('images/image.png')
+    img.save(path)
 
-
-    src = cv2.imread('images/image.png', 1)
+    src = cv2.imread(path, 1)
     blurred = cv2.GaussianBlur(src, (5, 5), 0)
     blurred_float = blurred.astype(np.float32) / 255.0
     edgeDetector = cv2.ximgproc.createStructuredEdgeDetection("model.yml")
     edges = edgeDetector.detectEdges(blurred_float) * 255.0
-    #cv2.imwrite('images/edge-raw.png', edges)
+    # cv2.imwrite('images/edge-raw.png', edges)
 
     edges_8u = np.asarray(edges, np.uint8)
     filterOutSaltPepperNoise(edges_8u)
-    #cv2.imwrite('images/edge.png', edges_8u)
-    
+    # cv2.imwrite('images/edge.png', edges_8u)
+
     contour = findSignificantContour(edges_8u)
     contourImg = np.copy(src)
     cv2.drawContours(contourImg, [contour], 0, (0, 255, 0), 2, cv2.LINE_AA, maxLevel=1)
-    #cv2.imwrite('images/contour.png', contourImg)
-    
+    # cv2.imwrite('images/contour.png', contourImg)
+
     mask = np.zeros_like(edges_8u)
     cv2.fillPoly(mask, [contour], 255)
 
@@ -106,7 +108,7 @@ def remove_background():
     trimap_print = np.copy(trimap)
     trimap_print[trimap_print == cv2.GC_PR_BGD] = 128
     trimap_print[trimap_print == cv2.GC_FGD] = 255
-    #cv2.imwrite('images/trimap.png', trimap_print)
+    # cv2.imwrite('images/trimap.png', trimap_print)
 
     # run grabcut
 
@@ -121,7 +123,7 @@ def remove_background():
         255,
         0
     ).astype('uint8')
-    #cv2.imwrite('images/mask2.png', mask2)
+    # cv2.imwrite('images/mask2.png', mask2)
 
     contour2 = findSignificantContour(mask2)
     mask3 = np.zeros_like(mask2)
@@ -139,9 +141,9 @@ def remove_background():
     foreground[mask4 == 0] = 0
     background = np.ones_like(foreground, dtype=float) * 255
 
-    #cv2.imwrite('images/foreground.png', foreground)
-    #cv2.imwrite('images/background.png', background)
-    #cv2.imwrite('images/alpha.png', alpha)
+    # cv2.imwrite('images/foreground.png', foreground)
+    # cv2.imwrite('images/background.png', background)
+    # cv2.imwrite('images/alpha.png', alpha)
 
     # Normalize the alpha mask to keep intensity between 0 and 1
     alpha = alpha / 255.0
@@ -157,7 +159,7 @@ def remove_background():
     b, g, r = cv2.split(src)
     rgba = [b, g, r, alpha]
     dst = cv2.merge(rgba, 4)
-    cv2.imwrite("images/image.png", dst)
+    cv2.imwrite(path, dst)
 
 
 # reaction to commands
@@ -202,7 +204,7 @@ def photo_handler(message: Message):
         new_file.write(downloaded_file)
 
     bot.send_message(message.chat.id, "Did some magic here")
-    remove_background()
+    remove_background('images/image.png')
     bot.send_document(message.chat.id, open('images/image.png', 'rb'))
     bot.send_message(message.chat.id, "Send more pics")
 
