@@ -23,7 +23,7 @@ opencv-contrib-python-headless==4.1.2.30
 pep8==1.7.1
 Pillow==6.2.0
 py==1.7.0
-Pygments==2.3.1
+Pygments==2.7.4
 pylint==2.3.1
 pyparsing==2.3.1
 PySocks==1.6.8
