@@ -21,7 +21,7 @@ mypy-lang==0.5.0
 numpy==1.16.4
 opencv-contrib-python-headless==4.1.2.30
 pep8==1.7.1
-Pillow==6.2.0
+Pillow==9.3.0
 py==1.7.0
 Pygments==2.3.1
 pylint==2.3.1
